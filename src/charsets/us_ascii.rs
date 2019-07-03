@@ -1,3 +1,4 @@
+use std::borrow::{Borrow, ToOwned};
 use std::error::Error;
 use std::fmt::{self, Display, Formatter};
 use std::mem;
@@ -42,17 +43,33 @@ impl CharsetTrait for Charset {
     }
 }
 
+#[derive(Clone, Copy)]
 pub struct Character(u8);
 
 impl CharacterTrait for Character {}
 
 pub struct Str([<Charset as CharsetTrait>::Character]);
 
-impl StrTrait for Str {}
+impl StrTrait<String> for Str {}
 
+impl ToOwned for Str {
+    type Owned = String;
+
+    fn to_owned(&self) -> Self::Owned {
+        String(self.0.to_vec())
+    }
+}
+
+#[derive(Clone)]
 pub struct String(Vec<<Charset as CharsetTrait>::Character>);
 
-impl StringTrait for String {}
+impl Borrow<Str> for String {
+    fn borrow(&self) -> &Str {
+        unsafe { mem::transmute(&*self.0) }
+    }
+}
+
+impl StringTrait<Str> for String {}
 
 #[derive(Debug)]
 pub struct DecodeError;

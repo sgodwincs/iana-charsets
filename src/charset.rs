@@ -1,3 +1,4 @@
+use std::borrow::{Borrow, ToOwned};
 use std::error::Error;
 
 use crate::charsets::UsAsciiStr;
@@ -36,18 +37,26 @@ pub trait Alias: Sized {
     fn name(&self) -> &'static UsAsciiStr;
 }
 
-pub trait Character {}
+pub trait Character: Copy {}
 
-pub trait Str {}
+pub trait Str<TString>: ToOwned<Owned = TString>
+where
+    TString: Borrow<Self>,
+{
+}
 
-pub trait String {}
+pub trait String<TStr>: Borrow<TStr> + Clone + Sized
+where
+    TStr: Str<Self> + ?Sized,
+{
+}
 
 pub trait Charset {
     type Alias: Alias;
     type Character: Character;
     type DecodeError: Error;
-    type Str: Str + ?Sized;
-    type String: String;
+    type Str: Str<Self::String> + ?Sized;
+    type String: String<Self::Str>;
 
     const MIB_ENUM: u16;
     const MIME_NAME: Option<&'static UsAsciiStr>;
