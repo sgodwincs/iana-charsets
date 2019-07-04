@@ -59,11 +59,11 @@ pub trait Charset {
     type String: String<Self::Str>;
 
     const MIB_ENUM: u16;
-    const MIME_NAME: Option<&'static UsAsciiStr>;
+    const PREFERRED_MIME_NAME: Option<&'static UsAsciiStr>;
     const PRIMARY_NAME: &'static UsAsciiStr;
 
     fn is_mime_text_suitable() -> bool {
-        Self::MIME_NAME.is_some()
+        Self::PREFERRED_MIME_NAME.is_some()
     }
 
     fn decode(value: &[u8]) -> Result<&Self::Str, Self::DecodeError> {

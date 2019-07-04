@@ -1,5 +1,5 @@
 #![feature(const_fn)]
-#![feature(const_transmute)]
+#![feature(const_raw_ptr_deref)]
 
 #[macro_use]
 pub mod charset;

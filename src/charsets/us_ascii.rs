@@ -1,7 +1,6 @@
 use std::borrow::{Borrow, ToOwned};
 use std::error::Error;
 use std::fmt::{self, Display, Formatter};
-use std::mem;
 
 use crate::charset::{
     Character as CharacterTrait, Charset as CharsetTrait, Str as StrTrait, String as StringTrait,
@@ -12,7 +11,7 @@ pub struct Charset;
 
 impl Charset {
     pub const unsafe fn from_bytes_unchecked(value: &[u8]) -> &<Self as CharsetTrait>::Str {
-        mem::transmute(value)
+        &*(value as *const [u8] as *const Str)
     }
 }
 
@@ -24,7 +23,7 @@ impl CharsetTrait for Charset {
     type String = String;
 
     const MIB_ENUM: u16 = 1;
-    const MIME_NAME: Option<&'static Str> =
+    const PREFERRED_MIME_NAME: Option<&'static Str> =
         Some(unsafe { Self::from_bytes_unchecked(b"US-ASCII") });
     const PRIMARY_NAME: &'static Str = unsafe { Self::from_bytes_unchecked(b"US-ASCII") };
 
@@ -48,7 +47,7 @@ pub struct Character(u8);
 
 impl CharacterTrait for Character {}
 
-pub struct Str([<Charset as CharsetTrait>::Character]);
+pub struct Str([u8]);
 
 impl StrTrait<String> for Str {}
 
@@ -61,11 +60,11 @@ impl ToOwned for Str {
 }
 
 #[derive(Clone)]
-pub struct String(Vec<<Charset as CharsetTrait>::Character>);
+pub struct String(Vec<u8>);
 
 impl Borrow<Str> for String {
     fn borrow(&self) -> &Str {
-        unsafe { mem::transmute(&*self.0) }
+        unsafe { Charset::from_bytes_unchecked(&*self.0) }
     }
 }
 
