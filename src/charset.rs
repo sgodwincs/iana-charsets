@@ -1,5 +1,7 @@
 use std::borrow::{Borrow, ToOwned};
 use std::error::Error;
+use std::fmt::{Debug, Display};
+use std::hash::Hash;
 
 use crate::charsets::UsAsciiStr;
 
@@ -11,7 +13,7 @@ macro_rules! aliases {
         )+
     ) => {
         use crate::charset::Alias as AliasTrait;
-        use crate::charsets::{UsAsciiStr, UsAsciiCharset};
+        use crate::charsets::UsAsciiStr;
 
         pub enum $enum {
         $(
@@ -25,7 +27,7 @@ macro_rules! aliases {
 
                 match self {
                 $(
-                    $variant => unsafe { UsAsciiCharset::from_bytes_unchecked($value) }
+                    $variant => unsafe { UsAsciiStr::from_bytes_unchecked($value) }
                 )+
                 }
             }
@@ -39,24 +41,53 @@ pub trait Alias: Sized {
 
 pub trait Character: Copy {}
 
-pub trait Str<TString>: ToOwned<Owned = TString>
-where
-    TString: Borrow<Self>,
+pub trait Str:
+    AsRef<[u8]>
+    + Debug
+    + Display
+    + Eq
+    + Hash
+    + Ord
+    + PartialEq
+    + PartialOrd
+    + private::Sealed
+    + ToOwned<Owned = <Self as Str>::String>
 {
+    type DecodeError: Error;
+    type String: String<DecodeError = Self::DecodeError, Str = Self>;
+
+    fn decode(value: &[u8]) -> Result<&Self, Self::DecodeError>;
+    unsafe fn decode_unchecked(value: &[u8]) -> &Self;
 }
 
-pub trait String<TStr>: Borrow<TStr> + Clone + Sized
-where
-    TStr: Str<Self> + ?Sized,
+pub trait String:
+    AsRef<[u8]>
+    + AsRef<<Self as String>::Str>
+    + Borrow<<Self as String>::Str>
+    + Clone
+    + Debug
+    + Display
+    + Eq
+    + Hash
+    + Ord
+    + PartialEq
+    + PartialOrd
+    + private::Sealed
+    + Sized
 {
+    type DecodeError: Error;
+    type Str: Str<DecodeError = Self::DecodeError, String = Self> + ?Sized;
+
+    fn decode(value: Vec<u8>) -> Result<Self, Self::DecodeError>;
+    unsafe fn decode_unchecked(value: Vec<u8>) -> Self;
 }
 
 pub trait Charset {
     type Alias: Alias;
     type Character: Character;
     type DecodeError: Error;
-    type Str: Str<Self::String> + ?Sized;
-    type String: String<Self::Str>;
+    type Str: Str<DecodeError = Self::DecodeError, String = Self::String> + ?Sized;
+    type String: String<DecodeError = Self::DecodeError, Str = Self::Str>;
 
     const MIB_ENUM: u16;
     const PREFERRED_MIME_NAME: Option<&'static UsAsciiStr>;
@@ -65,12 +96,8 @@ pub trait Charset {
     fn is_mime_text_suitable() -> bool {
         Self::PREFERRED_MIME_NAME.is_some()
     }
+}
 
-    fn decode(value: &[u8]) -> Result<&Self::Str, Self::DecodeError> {
-        Self::validate(value)?;
-        Ok(unsafe { Self::decode_unchecked(value) })
-    }
-
-    unsafe fn decode_unchecked(value: &[u8]) -> &Self::Str;
-    fn validate(value: &[u8]) -> Result<(), Self::DecodeError>;
+pub(crate) mod private {
+    pub trait Sealed {}
 }

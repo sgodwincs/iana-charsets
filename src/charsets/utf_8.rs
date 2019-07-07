@@ -1,7 +1,9 @@
 use std::borrow::{Borrow, ToOwned};
+use std::fmt::{self, Display, Formatter};
 use std::str::{self, Utf8Error};
 use std::string::String as StdString;
 
+use crate::charset::private::Sealed;
 use crate::charset::{
     Character as CharacterTrait, Charset as CharsetTrait, Str as StrTrait, String as StringTrait,
 };
@@ -10,12 +12,6 @@ type StdStr = str;
 
 #[derive(Debug)]
 pub struct Charset;
-
-impl Charset {
-    pub const unsafe fn from_bytes_unchecked(value: &[u8]) -> &<Self as CharsetTrait>::Str {
-        &*(value as *const [u8] as *const Str)
-    }
-}
 
 impl CharsetTrait for Charset {
     type Alias = Alias;
@@ -27,15 +23,7 @@ impl CharsetTrait for Charset {
     const MIB_ENUM: u16 = 1;
     const PREFERRED_MIME_NAME: Option<&'static UsAsciiStr> = None;
     const PRIMARY_NAME: &'static UsAsciiStr =
-        unsafe { UsAsciiCharset::from_bytes_unchecked(b"US-ASCII") };
-
-    unsafe fn decode_unchecked(value: &[u8]) -> &Self::Str {
-        Self::from_bytes_unchecked(value)
-    }
-
-    fn validate(value: &[u8]) -> Result<(), DecodeError> {
-        str::from_utf8(value).map(|_| ())
-    }
+        unsafe { UsAsciiStr::from_bytes_unchecked(b"US-ASCII") };
 }
 
 #[derive(Clone, Copy)]
@@ -43,9 +31,36 @@ pub struct Character(char);
 
 impl CharacterTrait for Character {}
 
+#[derive(Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
 pub struct Str(StdStr);
 
-impl StrTrait<String> for Str {}
+impl AsRef<[u8]> for Str {
+    fn as_ref(&self) -> &[u8] {
+        self.0.as_ref()
+    }
+}
+
+impl Display for Str {
+    fn fmt(&self, formatter: &mut Formatter) -> fmt::Result {
+        self.0.fmt(formatter)
+    }
+}
+
+impl Sealed for Str {}
+
+impl StrTrait for Str {
+    type DecodeError = DecodeError;
+    type String = String;
+
+    fn decode(value: &[u8]) -> Result<&Self, Self::DecodeError> {
+        let value = str::from_utf8(value)?;
+        Ok(unsafe { &*(value as *const StdStr as *const Str) })
+    }
+
+    unsafe fn decode_unchecked(value: &[u8]) -> &Self {
+        &*(value as *const [u8] as *const Str)
+    }
+}
 
 impl ToOwned for Str {
     type Owned = String;
@@ -55,8 +70,20 @@ impl ToOwned for Str {
     }
 }
 
-#[derive(Clone)]
+#[derive(Clone, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
 pub struct String(StdString);
+
+impl AsRef<[u8]> for String {
+    fn as_ref(&self) -> &[u8] {
+        self.0.as_ref()
+    }
+}
+
+impl AsRef<Str> for String {
+    fn as_ref(&self) -> &Str {
+        self.borrow()
+    }
+}
 
 impl Borrow<Str> for String {
     fn borrow(&self) -> &Str {
@@ -64,7 +91,29 @@ impl Borrow<Str> for String {
     }
 }
 
-impl StringTrait<Str> for String {}
+impl Display for String {
+    fn fmt(&self, formatter: &mut Formatter) -> fmt::Result {
+        let borrow: &Str = self.borrow();
+        borrow.fmt(formatter)
+    }
+}
+
+impl Sealed for String {}
+
+impl StringTrait for String {
+    type DecodeError = DecodeError;
+    type Str = Str;
+
+    fn decode(value: Vec<u8>) -> Result<Self, Self::DecodeError> {
+        Ok(String(
+            StdString::from_utf8(value).map_err(|error| error.utf8_error())?,
+        ))
+    }
+
+    unsafe fn decode_unchecked(value: Vec<u8>) -> Self {
+        String(StdString::from_utf8_unchecked(value))
+    }
+}
 
 pub type DecodeError = Utf8Error;
 

@@ -1,19 +1,15 @@
 use std::borrow::{Borrow, ToOwned};
 use std::error::Error;
 use std::fmt::{self, Display, Formatter};
+use std::str;
 
+use crate::charset::private::Sealed;
 use crate::charset::{
     Character as CharacterTrait, Charset as CharsetTrait, Str as StrTrait, String as StringTrait,
 };
 
 #[derive(Debug)]
 pub struct Charset;
-
-impl Charset {
-    pub const unsafe fn from_bytes_unchecked(value: &[u8]) -> &<Self as CharsetTrait>::Str {
-        &*(value as *const [u8] as *const Str)
-    }
-}
 
 impl CharsetTrait for Charset {
     type Alias = Alias;
@@ -24,22 +20,8 @@ impl CharsetTrait for Charset {
 
     const MIB_ENUM: u16 = 1;
     const PREFERRED_MIME_NAME: Option<&'static Str> =
-        Some(unsafe { Self::from_bytes_unchecked(b"US-ASCII") });
-    const PRIMARY_NAME: &'static Str = unsafe { Self::from_bytes_unchecked(b"US-ASCII") };
-
-    unsafe fn decode_unchecked(value: &[u8]) -> &Self::Str {
-        Self::from_bytes_unchecked(value)
-    }
-
-    fn validate(value: &[u8]) -> Result<(), DecodeError> {
-        for byte in value {
-            if !byte.is_ascii() {
-                return Err(DecodeError);
-            }
-        }
-
-        Ok(())
-    }
+        Some(unsafe { Str::from_bytes_unchecked(b"US-ASCII") });
+    const PRIMARY_NAME: &'static Str = unsafe { Str::from_bytes_unchecked(b"US-ASCII") };
 }
 
 #[derive(Clone, Copy)]
@@ -47,9 +29,42 @@ pub struct Character(u8);
 
 impl CharacterTrait for Character {}
 
+#[derive(Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
 pub struct Str([u8]);
 
-impl StrTrait<String> for Str {}
+impl Str {
+    pub const unsafe fn from_bytes_unchecked(value: &[u8]) -> &Self {
+        &*(value as *const [u8] as *const Str)
+    }
+}
+
+impl AsRef<[u8]> for Str {
+    fn as_ref(&self) -> &[u8] {
+        &self.0
+    }
+}
+
+impl Display for Str {
+    fn fmt(&self, formatter: &mut Formatter) -> fmt::Result {
+        unsafe { str::from_utf8_unchecked(&self.0) }.fmt(formatter)
+    }
+}
+
+impl Sealed for Str {}
+
+impl StrTrait for Str {
+    type DecodeError = DecodeError;
+    type String = String;
+
+    fn decode(value: &[u8]) -> Result<&Self, Self::DecodeError> {
+        validate(value)?;
+        Ok(unsafe { Self::decode_unchecked(value) })
+    }
+
+    unsafe fn decode_unchecked(value: &[u8]) -> &Self {
+        Self::from_bytes_unchecked(value)
+    }
+}
 
 impl ToOwned for Str {
     type Owned = String;
@@ -59,16 +74,49 @@ impl ToOwned for Str {
     }
 }
 
-#[derive(Clone)]
+#[derive(Clone, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
 pub struct String(Vec<u8>);
 
-impl Borrow<Str> for String {
-    fn borrow(&self) -> &Str {
-        unsafe { Charset::from_bytes_unchecked(&*self.0) }
+impl AsRef<[u8]> for String {
+    fn as_ref(&self) -> &[u8] {
+        self.0.as_ref()
     }
 }
 
-impl StringTrait<Str> for String {}
+impl AsRef<Str> for String {
+    fn as_ref(&self) -> &Str {
+        self.borrow()
+    }
+}
+
+impl Borrow<Str> for String {
+    fn borrow(&self) -> &Str {
+        unsafe { Str::from_bytes_unchecked(&*self.0) }
+    }
+}
+
+impl Display for String {
+    fn fmt(&self, formatter: &mut Formatter) -> fmt::Result {
+        let borrow: &Str = self.borrow();
+        borrow.fmt(formatter)
+    }
+}
+
+impl Sealed for String {}
+
+impl StringTrait for String {
+    type DecodeError = DecodeError;
+    type Str = Str;
+
+    fn decode(value: Vec<u8>) -> Result<Self, Self::DecodeError> {
+        validate(&value)?;
+        Ok(unsafe { Self::decode_unchecked(value) })
+    }
+
+    unsafe fn decode_unchecked(value: Vec<u8>) -> Self {
+        String(value)
+    }
+}
 
 #[derive(Debug)]
 pub struct DecodeError;
@@ -80,6 +128,16 @@ impl Display for DecodeError {
 }
 
 impl Error for DecodeError {}
+
+fn validate(value: &[u8]) -> Result<(), DecodeError> {
+    for byte in value {
+        if !byte.is_ascii() {
+            return Err(DecodeError);
+        }
+    }
+
+    Ok(())
+}
 
 aliases! {
     Alias,
