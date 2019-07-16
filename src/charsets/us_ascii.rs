@@ -1,6 +1,6 @@
 use std::borrow::{Borrow, ToOwned};
 use std::error::Error;
-use std::fmt::{self, Display, Formatter};
+use std::fmt::{self, Display, Formatter, Debug};
 use std::str;
 
 use crate::charset::private::Sealed;
@@ -29,7 +29,7 @@ pub struct Character(u8);
 
 impl CharacterTrait for Character {}
 
-#[derive(Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
+#[derive(Eq, Hash, Ord, PartialEq, PartialOrd)]
 pub struct Str([u8]);
 
 impl Str {
@@ -44,9 +44,15 @@ impl AsRef<[u8]> for Str {
     }
 }
 
+impl Debug for Str {
+    fn fmt(&self, formatter: &mut Formatter) -> fmt::Result {
+        write!(formatter, "{:?}", unsafe { str::from_utf8_unchecked(&self.0) })
+    }
+}
+
 impl Display for Str {
     fn fmt(&self, formatter: &mut Formatter) -> fmt::Result {
-        unsafe { str::from_utf8_unchecked(&self.0) }.fmt(formatter)
+        write!(formatter, "{:?}", self)
     }
 }
 
@@ -74,7 +80,7 @@ impl ToOwned for Str {
     }
 }
 
-#[derive(Clone, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
+#[derive(Clone, Eq, Hash, Ord, PartialEq, PartialOrd)]
 pub struct String(Vec<u8>);
 
 impl AsRef<[u8]> for String {
@@ -95,10 +101,16 @@ impl Borrow<Str> for String {
     }
 }
 
-impl Display for String {
+impl Debug for String {
     fn fmt(&self, formatter: &mut Formatter) -> fmt::Result {
         let borrow: &Str = self.borrow();
-        borrow.fmt(formatter)
+        write!(formatter, "{:?}", borrow)
+    }
+}
+
+impl Display for String {
+    fn fmt(&self, formatter: &mut Formatter) -> fmt::Result {
+        write!(formatter, "{:?}", self)
     }
 }
 
