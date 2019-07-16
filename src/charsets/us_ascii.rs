@@ -1,6 +1,6 @@
 use std::borrow::{Borrow, ToOwned};
 use std::error::Error;
-use std::fmt::{self, Display, Formatter, Debug};
+use std::fmt::{self, Debug, Display, Formatter};
 use std::str;
 
 use crate::charset::private::Sealed;
@@ -46,7 +46,9 @@ impl AsRef<[u8]> for Str {
 
 impl Debug for Str {
     fn fmt(&self, formatter: &mut Formatter) -> fmt::Result {
-        write!(formatter, "{:?}", unsafe { str::from_utf8_unchecked(&self.0) })
+        write!(formatter, "{:?}", unsafe {
+            str::from_utf8_unchecked(&self.0)
+        })
     }
 }
 
@@ -120,8 +122,10 @@ impl StringTrait for String {
     type DecodeError = DecodeError;
     type Str = Str;
 
-    fn decode(value: Vec<u8>) -> Result<Self, Self::DecodeError> {
-        validate(&value)?;
+    fn decode(value: Vec<u8>) -> Result<Self, (Vec<u8>, Self::DecodeError)> {
+        if let Err(error) = validate(&value) {
+            return Err((value, error));
+        }
         Ok(unsafe { Self::decode_unchecked(value) })
     }
 

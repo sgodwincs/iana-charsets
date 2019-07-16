@@ -104,10 +104,13 @@ impl StringTrait for String {
     type DecodeError = DecodeError;
     type Str = Str;
 
-    fn decode(value: Vec<u8>) -> Result<Self, Self::DecodeError> {
-        Ok(String(
-            StdString::from_utf8(value).map_err(|error| error.utf8_error())?,
-        ))
+    fn decode(value: Vec<u8>) -> Result<Self, (Vec<u8>, Self::DecodeError)> {
+        let value = StdString::from_utf8(value).map_err(|error| {
+            let decode_error = error.utf8_error();
+            (error.into_bytes(), decode_error)
+        })?;
+
+        Ok(String(value))
     }
 
     unsafe fn decode_unchecked(value: Vec<u8>) -> Self {

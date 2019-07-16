@@ -78,7 +78,7 @@ pub trait String:
     type DecodeError: Error;
     type Str: Str<DecodeError = Self::DecodeError, String = Self> + ?Sized;
 
-    fn decode(value: Vec<u8>) -> Result<Self, Self::DecodeError>;
+    fn decode(value: Vec<u8>) -> Result<Self, (Vec<u8>, Self::DecodeError)>;
     unsafe fn decode_unchecked(value: Vec<u8>) -> Self;
 }
 
