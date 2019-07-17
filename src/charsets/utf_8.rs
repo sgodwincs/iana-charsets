@@ -95,7 +95,7 @@ impl Borrow<Str> for String {
 }
 
 impl Deref for String {
-    type Target = Str;
+    type Target = <Self as StringTrait>::Str;
 
     fn deref(&self) -> &Self::Target {
         unsafe { &*(&*self.0 as *const StdStr as *const Str) }
