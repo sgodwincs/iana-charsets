@@ -1,5 +1,6 @@
 use std::borrow::{Borrow, ToOwned};
 use std::fmt::{self, Display, Formatter};
+use std::ops::Deref;
 use std::str::{self, Utf8Error};
 use std::string::String as StdString;
 
@@ -25,6 +26,8 @@ impl CharsetTrait for Charset {
     const PRIMARY_NAME: &'static UsAsciiStr =
         unsafe { UsAsciiStr::from_bytes_unchecked(b"US-ASCII") };
 }
+
+impl Sealed for Charset {}
 
 #[derive(Clone, Copy)]
 pub struct Character(char);
@@ -81,12 +84,20 @@ impl AsRef<[u8]> for String {
 
 impl AsRef<Str> for String {
     fn as_ref(&self) -> &Str {
-        self.borrow()
+        &self
     }
 }
 
 impl Borrow<Str> for String {
     fn borrow(&self) -> &Str {
+        &self
+    }
+}
+
+impl Deref for String {
+    type Target = Str;
+
+    fn deref(&self) -> &Self::Target {
         unsafe { &*(&*self.0 as *const StdStr as *const Str) }
     }
 }
@@ -95,6 +106,12 @@ impl Display for String {
     fn fmt(&self, formatter: &mut Formatter) -> fmt::Result {
         let borrow: &Str = self.borrow();
         borrow.fmt(formatter)
+    }
+}
+
+impl From<String> for Vec<u8> {
+    fn from(value: String) -> Self {
+        value.0.into_bytes()
     }
 }
 

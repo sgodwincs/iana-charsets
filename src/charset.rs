@@ -1,6 +1,7 @@
 use std::borrow::{Borrow, ToOwned};
 use std::error::Error;
 use std::fmt::{Debug, Display};
+use std::ops::Deref;
 use std::hash::Hash;
 
 use crate::charsets::UsAsciiStr;
@@ -52,6 +53,8 @@ pub trait Str:
     + PartialOrd
     + private::Sealed
     + ToOwned<Owned = <Self as Str>::String>
+where
+    Vec<u8>: From<Self::String>
 {
     type DecodeError: Error;
     type String: String<DecodeError = Self::DecodeError, Str = Self>;
@@ -66,6 +69,7 @@ pub trait String:
     + Borrow<<Self as String>::Str>
     + Clone
     + Debug
+    + Deref<Target = <Self as String>::Str>
     + Display
     + Eq
     + Hash
@@ -74,6 +78,8 @@ pub trait String:
     + PartialOrd
     + private::Sealed
     + Sized
+where
+    Vec<u8>: From<Self>,
 {
     type DecodeError: Error;
     type Str: Str<DecodeError = Self::DecodeError, String = Self> + ?Sized;
@@ -82,7 +88,10 @@ pub trait String:
     unsafe fn decode_unchecked(value: Vec<u8>) -> Self;
 }
 
-pub trait Charset {
+pub trait Charset: private::Sealed
+where
+    Vec<u8>: From<Self::String>
+{
     type Alias: Alias;
     type Character: Character;
     type DecodeError: Error;

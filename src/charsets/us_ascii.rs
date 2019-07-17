@@ -1,6 +1,7 @@
 use std::borrow::{Borrow, ToOwned};
 use std::error::Error;
 use std::fmt::{self, Debug, Display, Formatter};
+use std::ops::Deref;
 use std::str;
 
 use crate::charset::private::Sealed;
@@ -23,6 +24,8 @@ impl CharsetTrait for Charset {
         Some(unsafe { Str::from_bytes_unchecked(b"US-ASCII") });
     const PRIMARY_NAME: &'static Str = unsafe { Str::from_bytes_unchecked(b"US-ASCII") };
 }
+
+impl Sealed for Charset {}
 
 #[derive(Clone, Copy)]
 pub struct Character(u8);
@@ -93,26 +96,39 @@ impl AsRef<[u8]> for String {
 
 impl AsRef<Str> for String {
     fn as_ref(&self) -> &Str {
-        self.borrow()
+        &self
     }
 }
 
 impl Borrow<Str> for String {
     fn borrow(&self) -> &Str {
-        unsafe { Str::from_bytes_unchecked(&*self.0) }
+        &self
     }
 }
 
 impl Debug for String {
     fn fmt(&self, formatter: &mut Formatter) -> fmt::Result {
-        let borrow: &Str = self.borrow();
-        write!(formatter, "{:?}", borrow)
+        write!(formatter, "{:?}", &self)
+    }
+}
+
+impl Deref for String {
+    type Target = <Self as StringTrait>::Str;
+
+    fn deref(&self) -> &Self::Target {
+        unsafe { Str::from_bytes_unchecked(&*self.0) }
     }
 }
 
 impl Display for String {
     fn fmt(&self, formatter: &mut Formatter) -> fmt::Result {
         write!(formatter, "{:?}", self)
+    }
+}
+
+impl From<String> for Vec<u8> {
+    fn from(value: String) -> Self {
+        value.0
     }
 }
 
