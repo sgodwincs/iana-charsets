@@ -85,10 +85,12 @@ pub trait String:
     unsafe fn decode_unchecked(value: Vec<u8>) -> Self;
 }
 
+pub trait DecodeError: Clone + Copy + Debug + Eq + Error + Hash + PartialEq {}
+
 pub trait Charset: private::Sealed {
     type Alias: Alias;
     type Character: Character;
-    type DecodeError: Error;
+    type DecodeError: DecodeError;
     type Str: Str<DecodeError = Self::DecodeError, String = Self::String> + ?Sized;
     type String: String<DecodeError = Self::DecodeError, Str = Self::Str>;
 

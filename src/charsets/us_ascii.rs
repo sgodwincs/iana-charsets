@@ -6,7 +6,8 @@ use std::str;
 
 use crate::charset::private::Sealed;
 use crate::charset::{
-    Character as CharacterTrait, Charset as CharsetTrait, Str as StrTrait, String as StringTrait,
+    Character as CharacterTrait, Charset as CharsetTrait, DecodeError as DecodeErrorTrait,
+    Str as StrTrait, String as StringTrait,
 };
 
 #[derive(Debug)]
@@ -150,8 +151,10 @@ impl StringTrait for String {
     }
 }
 
-#[derive(Debug)]
+#[derive(Copy, Clone, Debug, Eq, Hash, PartialEq)]
 pub struct DecodeError;
+
+impl DecodeErrorTrait for DecodeError {}
 
 impl Display for DecodeError {
     fn fmt(&self, formatter: &mut Formatter) -> fmt::Result {

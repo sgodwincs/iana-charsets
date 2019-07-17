@@ -1,12 +1,14 @@
 use std::borrow::{Borrow, ToOwned};
+use std::error::Error;
 use std::fmt::{self, Display, Formatter};
 use std::ops::Deref;
-use std::str::{self, Utf8Error};
+use std::str;
 use std::string::String as StdString;
 
 use crate::charset::private::Sealed;
 use crate::charset::{
-    Character as CharacterTrait, Charset as CharsetTrait, Str as StrTrait, String as StringTrait,
+    Character as CharacterTrait, Charset as CharsetTrait, DecodeError as DecodeErrorTrait,
+    Str as StrTrait, String as StringTrait,
 };
 
 type StdStr = str;
@@ -56,7 +58,7 @@ impl StrTrait for Str {
     type String = String;
 
     fn decode(value: &[u8]) -> Result<&Self, Self::DecodeError> {
-        let value = str::from_utf8(value)?;
+        let value = str::from_utf8(value).map_err(|_| DecodeError)?;
         Ok(unsafe { &*(value as *const StdStr as *const Str) })
     }
 
@@ -122,10 +124,8 @@ impl StringTrait for String {
     type Str = Str;
 
     fn decode(value: Vec<u8>) -> Result<Self, (Vec<u8>, Self::DecodeError)> {
-        let value = StdString::from_utf8(value).map_err(|error| {
-            let decode_error = error.utf8_error();
-            (error.into_bytes(), decode_error)
-        })?;
+        let value =
+            StdString::from_utf8(value).map_err(|error| (error.into_bytes(), DecodeError))?;
 
         Ok(String(value))
     }
@@ -135,7 +135,18 @@ impl StringTrait for String {
     }
 }
 
-pub type DecodeError = Utf8Error;
+#[derive(Copy, Clone, Debug, Eq, Hash, PartialEq)]
+pub struct DecodeError;
+
+impl DecodeErrorTrait for DecodeError {}
+
+impl Display for DecodeError {
+    fn fmt(&self, formatter: &mut Formatter) -> fmt::Result {
+        write!(formatter, "invalid UTF-8")
+    }
+}
+
+impl Error for DecodeError {}
 
 aliases! {
     Alias,
