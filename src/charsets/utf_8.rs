@@ -1,6 +1,6 @@
 use std::borrow::{Borrow, ToOwned};
 use std::error::Error;
-use std::fmt::{self, Display, Formatter};
+use std::fmt::{Display, Formatter, Result as FmtResult};
 use std::ops::Deref;
 use std::str;
 use std::string::String as StdString;
@@ -31,10 +31,16 @@ impl CharsetTrait for Charset {
 
 impl Sealed for Charset {}
 
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
 pub struct Character(char);
 
 impl CharacterTrait for Character {}
+
+impl Display for Character {
+    fn fmt(&self, formatter: &mut Formatter) -> FmtResult {
+        write!(formatter, "{:?}", self)
+    }
+}
 
 #[derive(Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
 pub struct Str(StdStr);
@@ -46,7 +52,7 @@ impl AsRef<[u8]> for Str {
 }
 
 impl Display for Str {
-    fn fmt(&self, formatter: &mut Formatter) -> fmt::Result {
+    fn fmt(&self, formatter: &mut Formatter) -> FmtResult {
         self.0.fmt(formatter)
     }
 }
@@ -105,9 +111,15 @@ impl Deref for String {
 }
 
 impl Display for String {
-    fn fmt(&self, formatter: &mut Formatter) -> fmt::Result {
+    fn fmt(&self, formatter: &mut Formatter) -> FmtResult {
         let borrow: &Str = self.borrow();
         borrow.fmt(formatter)
+    }
+}
+
+impl<'str> From<&'str Str> for String {
+    fn from(value: &'str Str) -> Self {
+        value.to_owned()
     }
 }
 
@@ -141,7 +153,7 @@ pub struct DecodeError;
 impl DecodeErrorTrait for DecodeError {}
 
 impl Display for DecodeError {
-    fn fmt(&self, formatter: &mut Formatter) -> fmt::Result {
+    fn fmt(&self, formatter: &mut Formatter) -> FmtResult {
         write!(formatter, "invalid UTF-8")
     }
 }

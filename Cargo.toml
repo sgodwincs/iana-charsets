@@ -3,3 +3,6 @@ name = "iana-charsets"
 version = "0.1.0"
 authors = ["Scott Godwin <sgodwincs@gmail.com>"]
 edition = "2018"
+
+[dependencies]
+paste = "0.1.5"

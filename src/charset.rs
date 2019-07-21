@@ -40,7 +40,10 @@ pub trait Alias: Sized {
     fn name(&self) -> &'static UsAsciiStr;
 }
 
-pub trait Character: Copy {}
+pub trait Character:
+    Clone + Copy + Debug + Display + Eq + Hash + Ord + PartialEq + PartialOrd
+{
+}
 
 pub trait Str:
     AsRef<[u8]>
@@ -70,6 +73,7 @@ pub trait String:
     + Deref<Target = <Self as String>::Str>
     + Display
     + Eq
+    + for<'str> From<&'str <Self as String>::Str>
     + Hash
     + Into<Vec<u8>>
     + Ord

@@ -1,6 +1,6 @@
 use std::borrow::{Borrow, ToOwned};
 use std::error::Error;
-use std::fmt::{self, Debug, Display, Formatter};
+use std::fmt::{Debug, Display, Formatter, Result as FmtResult};
 use std::ops::Deref;
 use std::str;
 
@@ -28,10 +28,22 @@ impl CharsetTrait for Charset {
 
 impl Sealed for Charset {}
 
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, Eq, Hash, Ord, PartialEq, PartialOrd)]
 pub struct Character(u8);
 
 impl CharacterTrait for Character {}
+
+impl Debug for Character {
+    fn fmt(&self, formatter: &mut Formatter) -> FmtResult {
+        write!(formatter, "{:?}", self.0 as char)
+    }
+}
+
+impl Display for Character {
+    fn fmt(&self, formatter: &mut Formatter) -> FmtResult {
+        write!(formatter, "{:?}", self)
+    }
+}
 
 #[derive(Eq, Hash, Ord, PartialEq, PartialOrd)]
 pub struct Str([u8]);
@@ -49,7 +61,7 @@ impl AsRef<[u8]> for Str {
 }
 
 impl Debug for Str {
-    fn fmt(&self, formatter: &mut Formatter) -> fmt::Result {
+    fn fmt(&self, formatter: &mut Formatter) -> FmtResult {
         write!(formatter, "{:?}", unsafe {
             str::from_utf8_unchecked(&self.0)
         })
@@ -57,7 +69,7 @@ impl Debug for Str {
 }
 
 impl Display for Str {
-    fn fmt(&self, formatter: &mut Formatter) -> fmt::Result {
+    fn fmt(&self, formatter: &mut Formatter) -> FmtResult {
         write!(formatter, "{:?}", self)
     }
 }
@@ -108,7 +120,7 @@ impl Borrow<Str> for String {
 }
 
 impl Debug for String {
-    fn fmt(&self, formatter: &mut Formatter) -> fmt::Result {
+    fn fmt(&self, formatter: &mut Formatter) -> FmtResult {
         write!(formatter, "{:?}", &self)
     }
 }
@@ -122,8 +134,14 @@ impl Deref for String {
 }
 
 impl Display for String {
-    fn fmt(&self, formatter: &mut Formatter) -> fmt::Result {
+    fn fmt(&self, formatter: &mut Formatter) -> FmtResult {
         write!(formatter, "{:?}", self)
+    }
+}
+
+impl<'str> From<&'str Str> for String {
+    fn from(value: &'str Str) -> Self {
+        value.to_owned()
     }
 }
 
@@ -157,7 +175,7 @@ pub struct DecodeError;
 impl DecodeErrorTrait for DecodeError {}
 
 impl Display for DecodeError {
-    fn fmt(&self, formatter: &mut Formatter) -> fmt::Result {
+    fn fmt(&self, formatter: &mut Formatter) -> FmtResult {
         write!(formatter, "invalid US-ASCII")
     }
 }
