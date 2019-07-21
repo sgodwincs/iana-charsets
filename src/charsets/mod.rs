@@ -2,6 +2,7 @@ use paste::item;
 use std::borrow::ToOwned;
 use std::error::Error;
 use std::fmt::{Display, Formatter, Result as FmtResult};
+use std::ops::Deref;
 
 pub mod us_ascii;
 pub mod utf_8;
@@ -197,6 +198,18 @@ macro_rules! enums {
                 }
             }
         }
+
+    $(
+        item! {
+            impl From<[<$charset DecodeError>]> for DecodeError {
+                fn from(value: [<$charset DecodeError>]) -> Self {
+                    DecodeError::$charset(value)
+                }
+            }
+        }
+    )+
+
+        // from errors here
     };
 }
 
