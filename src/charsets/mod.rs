@@ -2,7 +2,6 @@ use paste::item;
 use std::borrow::ToOwned;
 use std::error::Error;
 use std::fmt::{Display, Formatter, Result as FmtResult};
-use std::ops::Deref;
 
 pub mod us_ascii;
 pub mod utf_8;
@@ -16,12 +15,48 @@ pub use utf_8::{
     DecodeError as Utf8DecodeError, Str as Utf8Str, String as Utf8String,
 };
 
+use crate::charset::{Str as StrTrait, String as StringTrait};
+
 macro_rules! enums {
     ($($charset:ident,)+) => {
         pub enum Charset {
         $(
             $charset,
         )+
+        }
+
+        impl Charset {
+            item! {
+                pub fn decode_from_byte_slice<'str>(
+                    &self,
+                    value: &'str [u8]
+                ) -> Result<Str<'str>, DecodeError> {
+                    use self::Charset::*;
+
+                    match self {
+                    $(
+                        $charset => Ok(Str::$charset([<$charset Str>]::decode(value)?)),
+                    )+
+                    }
+                }
+            }
+
+            item! {
+                pub fn decode_from_byte_vec(
+                    &self,
+                    value: Vec<u8>
+                ) -> Result<String, (Vec<u8>, DecodeError)> {
+                    use self::Charset::*;
+
+                    match self {
+                    $(
+                        $charset => Ok(String::$charset(
+                            [<$charset String>]::decode(value)
+                                .map_err(|(value, error)| (value, DecodeError::from(error)))?)),
+                    )+
+                    }
+                }
+            }
         }
 
         item! {
