@@ -153,6 +153,26 @@ macro_rules! enums {
             }
         }
 
+        impl String {
+            pub fn as_ref(&self) -> Str {
+                self.deref()
+            }
+
+            pub fn borrow(&self) -> Str {
+                self.deref()
+            }
+
+            pub fn deref(&self) -> Str {
+                use self::String::*;
+
+                match self {
+                $(
+                    $charset(string) => Str::$charset(&string),
+                )+
+                }
+            }
+        }
+
         impl AsRef<[u8]> for String {
             fn as_ref(&self) -> &[u8] {
                 use self::String::*;
@@ -243,8 +263,6 @@ macro_rules! enums {
             }
         }
     )+
-
-        // from errors here
     };
 }
 
