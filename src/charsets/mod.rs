@@ -117,6 +117,18 @@ macro_rules! enums {
             }
         }
 
+        impl Str<'_> {
+            pub fn to_owned(&self) -> String {
+                use self::Str::*;
+
+                match *self {
+                $(
+                    $charset(str) => String::$charset(str.to_owned()),
+                )+
+                }
+            }
+        }
+
         impl AsRef<[u8]> for Str<'_> {
             fn as_ref(&self) -> &[u8] {
                 use self::Str::*;
@@ -199,13 +211,7 @@ macro_rules! enums {
 
         impl<'str> From<Str<'str>> for String {
             fn from(value: Str<'str>) -> Self {
-                use self::String::*;
-
-                match value {
-                $(
-                    Str::$charset(str) => $charset(str.to_owned()),
-                )+
-                }
+                value.to_owned()
             }
         }
 
