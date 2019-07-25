@@ -72,7 +72,7 @@ impl Debug for Str {
 
 impl Display for Str {
     fn fmt(&self, formatter: &mut Formatter) -> FmtResult {
-        formatter.write_str(self.as_str())
+        Debug::fmt(self, formatter)
     }
 }
 
@@ -123,7 +123,7 @@ impl Borrow<Str> for String {
 
 impl Debug for String {
     fn fmt(&self, formatter: &mut Formatter) -> FmtResult {
-        formatter.write_str(self.as_str())
+        Debug::fmt(&**self, formatter)
     }
 }
 
@@ -131,13 +131,13 @@ impl Deref for String {
     type Target = <Self as StringTrait>::Str;
 
     fn deref(&self) -> &Self::Target {
-        unsafe { Str::from_bytes_unchecked(&*self.0) }
+        unsafe { Str::decode_unchecked(&*self.0) }
     }
 }
 
 impl Display for String {
     fn fmt(&self, formatter: &mut Formatter) -> FmtResult {
-        formatter.write_str(self.as_str())
+        Debug::fmt(self, formatter)
     }
 }
 
@@ -163,6 +163,7 @@ impl StringTrait for String {
         if let Err(error) = validate(&value) {
             return Err((value, error));
         }
+        
         Ok(unsafe { Self::decode_unchecked(value) })
     }
 

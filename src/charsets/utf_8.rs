@@ -1,6 +1,6 @@
 use std::borrow::{Borrow, ToOwned};
 use std::error::Error;
-use std::fmt::{Display, Formatter, Result as FmtResult, Write};
+use std::fmt::{Display, Debug, Formatter, Result as FmtResult, Write};
 use std::ops::Deref;
 use std::str;
 use std::string::String as StdString;
@@ -53,7 +53,7 @@ impl AsRef<[u8]> for Str {
 
 impl Display for Str {
     fn fmt(&self, formatter: &mut Formatter) -> FmtResult {
-        self.0.fmt(formatter)
+        Debug::fmt(self, formatter)
     }
 }
 
@@ -112,8 +112,7 @@ impl Deref for String {
 
 impl Display for String {
     fn fmt(&self, formatter: &mut Formatter) -> FmtResult {
-        let borrow: &Str = self.borrow();
-        borrow.fmt(formatter)
+        Debug::fmt(self, formatter)
     }
 }
 
