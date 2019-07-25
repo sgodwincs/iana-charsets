@@ -1,6 +1,6 @@
 use std::borrow::{Borrow, ToOwned};
 use std::error::Error;
-use std::fmt::{Display, Formatter, Result as FmtResult};
+use std::fmt::{Display, Formatter, Result as FmtResult, Write};
 use std::ops::Deref;
 use std::str;
 use std::string::String as StdString;
@@ -13,7 +13,7 @@ use crate::charset::{
 
 type StdStr = str;
 
-#[derive(Debug)]
+#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
 pub struct Charset;
 
 impl CharsetTrait for Charset {
@@ -38,7 +38,7 @@ impl CharacterTrait for Character {}
 
 impl Display for Character {
     fn fmt(&self, formatter: &mut Formatter) -> FmtResult {
-        write!(formatter, "{:?}", self)
+        formatter.write_char(self.0)
     }
 }
 
@@ -154,7 +154,7 @@ impl DecodeErrorTrait for DecodeError {}
 
 impl Display for DecodeError {
     fn fmt(&self, formatter: &mut Formatter) -> FmtResult {
-        write!(formatter, "invalid UTF-8")
+        formatter.write_str("invalid UTF-8")
     }
 }
 

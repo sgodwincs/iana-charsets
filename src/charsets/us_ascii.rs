@@ -1,6 +1,6 @@
 use std::borrow::{Borrow, ToOwned};
 use std::error::Error;
-use std::fmt::{Debug, Display, Formatter, Result as FmtResult};
+use std::fmt::{Debug, Display, Formatter, Result as FmtResult, Write};
 use std::ops::Deref;
 use std::str;
 
@@ -10,7 +10,7 @@ use crate::charset::{
     Str as StrTrait, String as StringTrait,
 };
 
-#[derive(Debug)]
+#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
 pub struct Charset;
 
 impl CharsetTrait for Charset {
@@ -35,13 +35,13 @@ impl CharacterTrait for Character {}
 
 impl Debug for Character {
     fn fmt(&self, formatter: &mut Formatter) -> FmtResult {
-        write!(formatter, "{:?}", self.0 as char)
+        formatter.write_char(self.0 as char)
     }
 }
 
 impl Display for Character {
     fn fmt(&self, formatter: &mut Formatter) -> FmtResult {
-        write!(formatter, "{:?}", self)
+        formatter.write_char(self.0 as char)
     }
 }
 
@@ -49,6 +49,10 @@ impl Display for Character {
 pub struct Str([u8]);
 
 impl Str {
+    pub fn as_str(&self) -> &str {
+        unsafe { str::from_utf8_unchecked(&self.0) }
+    }
+
     pub const unsafe fn from_bytes_unchecked(value: &[u8]) -> &Self {
         &*(value as *const [u8] as *const Str)
     }
@@ -62,15 +66,13 @@ impl AsRef<[u8]> for Str {
 
 impl Debug for Str {
     fn fmt(&self, formatter: &mut Formatter) -> FmtResult {
-        write!(formatter, "{:?}", unsafe {
-            str::from_utf8_unchecked(&self.0)
-        })
+        formatter.write_str(self.as_str())
     }
 }
 
 impl Display for Str {
     fn fmt(&self, formatter: &mut Formatter) -> FmtResult {
-        write!(formatter, "{:?}", self)
+        formatter.write_str(self.as_str())
     }
 }
 
@@ -121,7 +123,7 @@ impl Borrow<Str> for String {
 
 impl Debug for String {
     fn fmt(&self, formatter: &mut Formatter) -> FmtResult {
-        write!(formatter, "{:?}", &self)
+        formatter.write_str(self.as_str())
     }
 }
 
@@ -135,7 +137,7 @@ impl Deref for String {
 
 impl Display for String {
     fn fmt(&self, formatter: &mut Formatter) -> FmtResult {
-        write!(formatter, "{:?}", self)
+        formatter.write_str(self.as_str())
     }
 }
 
@@ -176,7 +178,7 @@ impl DecodeErrorTrait for DecodeError {}
 
 impl Display for DecodeError {
     fn fmt(&self, formatter: &mut Formatter) -> FmtResult {
-        write!(formatter, "invalid US-ASCII")
+        formatter.write_str("invalid US-ASCII")
     }
 }
 
@@ -203,6 +205,6 @@ aliases! {
     (Iso646Irv1991, b"ISO_646.irv:1991");
     (Iso646Us, b"ISO646-US");
     (IsoIr6, b"iso-ir-6");
-    (UsAscii, b"US-ASCII");
     (Us, b"us");
+    (UsAscii, b"US-ASCII");
 }
