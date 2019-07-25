@@ -20,7 +20,7 @@ impl CharsetTrait for Charset {
     type Str = Str;
     type String = String;
 
-    const MIB_ENUM: u16 = 1;
+    const MIB_ENUM: u16 = 3;
     const PREFERRED_MIME_NAME: Option<&'static Str> =
         Some(unsafe { Str::from_bytes_unchecked(b"US-ASCII") });
     const PRIMARY_NAME: &'static Str = unsafe { Str::from_bytes_unchecked(b"US-ASCII") };
@@ -163,7 +163,7 @@ impl StringTrait for String {
         if let Err(error) = validate(&value) {
             return Err((value, error));
         }
-        
+
         Ok(unsafe { Self::decode_unchecked(value) })
     }
 

@@ -1,6 +1,6 @@
 use std::borrow::{Borrow, ToOwned};
 use std::error::Error;
-use std::fmt::{Display, Debug, Formatter, Result as FmtResult, Write};
+use std::fmt::{Debug, Display, Formatter, Result as FmtResult, Write};
 use std::ops::Deref;
 use std::str;
 use std::string::String as StdString;
@@ -23,7 +23,7 @@ impl CharsetTrait for Charset {
     type Str = Str;
     type String = String;
 
-    const MIB_ENUM: u16 = 1;
+    const MIB_ENUM: u16 = 106;
     const PREFERRED_MIME_NAME: Option<&'static UsAsciiStr> = None;
     const PRIMARY_NAME: &'static UsAsciiStr =
         unsafe { UsAsciiStr::from_bytes_unchecked(b"US-ASCII") };
