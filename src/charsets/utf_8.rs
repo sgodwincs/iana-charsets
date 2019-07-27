@@ -31,10 +31,16 @@ impl CharsetTrait for Charset {
 
 impl Sealed for Charset {}
 
-#[derive(Clone, Copy, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
+#[derive(Clone, Copy, Eq, Hash, Ord, PartialEq, PartialOrd)]
 pub struct Character(char);
 
 impl CharacterTrait for Character {}
+
+impl Debug for Character {
+    fn fmt(&self, formatter: &mut Formatter) -> FmtResult {
+        formatter.write_char(self.0)
+    }
+}
 
 impl Display for Character {
     fn fmt(&self, formatter: &mut Formatter) -> FmtResult {
