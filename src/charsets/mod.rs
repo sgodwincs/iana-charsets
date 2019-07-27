@@ -3,9 +3,27 @@ use std::borrow::ToOwned;
 use std::error::Error;
 use std::fmt::{Display, Formatter, Result as FmtResult};
 
+pub mod iso8859_1_1987;
+pub mod iso8859_2_1987;
+pub mod iso8859_3_1988;
 pub mod us_ascii;
 pub mod utf_8;
 
+pub use iso8859_1_1987::{
+    Alias as Iso8859_1_1987Alias, Character as Iso8859_1_1987Character,
+    Charset as Iso8859_1_1987Charset, DecodeError as Iso8859_1_1987DecodeError,
+    Str as Iso8859_1_1987Str, String as Iso8859_1_1987String,
+};
+pub use iso8859_2_1987::{
+    Alias as Iso8859_2_1987Alias, Character as Iso8859_2_1987Character,
+    Charset as Iso8859_2_1987Charset, DecodeError as Iso8859_2_1987DecodeError,
+    Str as Iso8859_2_1987Str, String as Iso8859_2_1987String,
+};
+pub use iso8859_3_1988::{
+    Alias as Iso8859_3_1988Alias, Character as Iso8859_3_1988Character,
+    Charset as Iso8859_3_1988Charset, DecodeError as Iso8859_3_1988DecodeError,
+    Str as Iso8859_3_1988Str, String as Iso8859_3_1988String,
+};
 pub use us_ascii::{
     Alias as UsAsciiAlias, Character as UsAsciiCharacter, Charset as UsAsciiCharset,
     DecodeError as UsAsciiDecodeError, Str as UsAsciiStr, String as UsAsciiString,
@@ -329,6 +347,7 @@ impl From<String> for CowStr<'static> {
 }
 
 enums! {
+    Iso8859_1_1987,
     UsAscii,
     Utf8,
 }
