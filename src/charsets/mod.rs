@@ -348,6 +348,8 @@ impl From<String> for CowStr<'static> {
 
 enums! {
     Iso8859_1_1987,
+    Iso8859_2_1987,
+    Iso8859_3_1988,
     UsAscii,
     Utf8,
 }
